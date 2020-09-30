@@ -1,0 +1,80 @@
+package deufome.com;
+
+import javax.swing.UIManager;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpEntity;
+import org.springframework.web.client.RestTemplate;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
+import deufome.com.model.Order;
+import deufome.com.model.User;
+import deufome.com.view.FrmLogin;
+import open.digytal.util.desktop.ss.util.Contexto;
+
+@SpringBootApplication
+public class ConsumingRestApplication {
+
+    private static final Logger log = LoggerFactory.getLogger(ConsumingRestApplication.class);
+    
+    public static void main(String[] args) {
+    	RestTemplate restTemplate = new RestTemplate();
+    	Quote quote = restTemplate.getForObject(
+                "https://gturnquist-quoters.cfapps.io/api/random", Quote.class);
+    	Gson gson = new Gson();
+    	User novo = new User();
+    	User user = new User();
+    	user.setEmail("manager@demo.com");
+    	user.setPassword("123456");
+    	HttpEntity<User> request = new HttpEntity<>(user);
+    	System.out.println("quote  -- " + quote.getType() + quote.getValue());
+    	String c = restTemplate.postForObject("https://deufomeapp.com/public/api/login", request, String.class);
+    	novo = restTemplate.postForObject("https://deufomeapp.com/public/api/login", request, User.class);
+    	
+    	System.out.println("quantidade " +c);
+    	
+    	JsonObject jsonObject = gson.fromJson( c, JsonObject.class);
+    	User usuario = gson.fromJson(jsonObject.get("data"), User.class);
+    	System.out.println("quantidade " + jsonObject.get("api_token")); // returns a JsonElement for that name
+    	System.out.println("quantidade " + jsonObject.get("data")); // returns a JsonElement for that name
+    	System.out.println("quantidade " +c);
+    	System.out.println("quantidade " +usuario.getApi_token());
+    	System.out.println("quantidade " +usuario.getName());
+
+    	String a = restTemplate.getForObject("http://deufomeapp.com/public/api/orders?api_token="+usuario.getApi_token() +"&with=user;foodOrders;foodOrders.food;orderStatus;payment&search=user.id:"+usuario.getId()+"&searchFields=user.id:=&orderBy=id&sortedBy=desc", String.class);
+    	JsonObject jsonOb = gson.fromJson( a, JsonObject.class);
+    	Order[] order = gson.fromJson(jsonOb.get("data"), Order[].class);
+    	System.out.println(a);
+    	System.out.println(jsonOb.get("data"));
+    	
+    	try {
+			String lf = UIManager.getSystemLookAndFeelClassName();
+			UIManager.setLookAndFeel(lf);
+			Contexto.exibirSplash();
+			SpringApplication.run(ConsumingRestApplication.class, args);
+			
+		} catch (Exception e) {
+			//logger.error(e);
+			System.exit(0);
+		}
+    }
+    
+    @Bean
+	public CommandLineRunner run( FrmLogin login) {
+		return args -> {
+			//DesktopApp.exibirSplash();
+			login.exibir();
+		};
+	}
+
+  
+
+   
+}
